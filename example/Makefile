@@ -23,3 +23,8 @@ $(PROGRAM_NAME): $(OBJECTS)
 
 # compila objetos
 %.o: %.c %.h
+
+.PHONY: clean
+
+clean:
+	@ find $(DIR_LIB) -type f -name '*.o' -delete
