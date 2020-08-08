@@ -5,14 +5,11 @@ DIR_LIB = ..
 
 # get all files *.c
 C_SOURCE = $(wildcard $(DIR_LIB)/*.c)
-#
-# #get all file *.o
+
+#get all file *.o
 OBJECTS = $(C_SOURCE:.c=.o) main.o
 
-# OBJECTS= main.o \
-# 				$(DIR_LIB)/domain.o \
-# 				$(DIR_LIB)/service.o \
-# 				$(DIR_LIB)/sock_util.o
+
 
 LDLIBS = -lpthread
 
