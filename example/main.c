@@ -24,7 +24,6 @@
 #include <unistd.h>
 
 #include "../domain.h"
-#include "../service.h"
 
 int main(int argc, char **argv)
 {
