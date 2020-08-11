@@ -48,14 +48,14 @@ int main(int argc, char **argv)
   char buff_service[NI_MAXSERV];
 
   // return ip immediately, no dns query latency
-  ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);
-  printf("ip returned 1ª call     - %s\n", buff_domain);
+  while(!ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST))
+    printf("ip returned 1ª call     - %s\n", buff_domain);
 
   // life continue (working...)
-  sleep(2);
+  // sleep(2);
 
   // the next query the domain will be available immediately (cache)
-  ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);
+  // ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);
   printf("domain returned 2ª call - %s\n", buff_domain);
 
 
