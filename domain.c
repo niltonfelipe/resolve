@@ -49,12 +49,14 @@ check_name_resolved ( struct sockaddr_storage *ss,
       if ( check_addr_equal ( ss, &hosts_cache[i].ss ) )
         {
           if ( hosts_cache[i].status == RESOLVED )
-            return i;
+            return i; //cache hit
 
-          break;
+          // already in cache, but not resolved
+          return -2;
         }
     }
 
+  // not found in cache
   return -1;
 }
 
@@ -79,8 +81,9 @@ ip2domain_thread ( void *arg )
     strncpy ( host->fqdn, host_buff, sizeof ( host->fqdn ) );
 
   host->status = RESOLVED;
-
-  pthread_exit ( NULL );  // close thread
+  
+  pthread_detach(pthread_self()); // free resources to system
+  pthread_exit ( NULL );  	  // close thread
 }
 
 int
@@ -93,13 +96,19 @@ ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
   // static struct thread_arg t_arg;
   pthread_t tid;
 
-  int nr;
-  if ( ( nr = check_name_resolved ( ss, hosts_cache, tot_hosts_cache ) ) != -1 )
+  int nr = check_name_resolved ( ss, hosts_cache, tot_hosts_cache );
+  if ( nr >= 0 )
     {
       // cache hit
 
       strncpy ( buff, hosts_cache[nr].fqdn, buff_len );
       return 1;
+    }
+  else if (nr == -2)
+    {
+      // already resolving
+      sockaddr_ntop ( ss, buff, buff_len );
+      return 0;
     }
   else
     {
@@ -115,11 +124,14 @@ ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
           // no buffer space currently available, return ip in format of text.
           // increase the buffer size if you want ;)
           if ( count++ == MAX_CACHE_ENTRIES - 1 )
-            return sockaddr_ntop ( ss, buff, buff_len );
+            {
+              sockaddr_ntop ( ss, buff, buff_len );
+              return 0;
+            }
+
         }
 
       memcpy ( &hosts_cache[index_cache_host].ss, ss, sizeof ( *ss ) );
-
       hosts_cache[index_cache_host].status = RESOLVING;
 
       // transform binary to text
