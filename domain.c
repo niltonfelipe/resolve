@@ -1,11 +1,13 @@
+
 /*
- *  Copyright (C) 2020 Mayco S. Berghetti
+ *  Copyright (C) 2020-2021 Mayco S. Berghetti
  *
+ *  This file is part of Netproc.
  *
- *  This program is free software: you can redistribute it and/or modify
+ *  Netproc is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  any later version.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,11 +18,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
-#include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <limits.h>   // for PTHREAD_STACK_MIN
 
 #include "domain.h"
 #include "sock_util.h"
@@ -49,7 +50,7 @@ check_name_resolved ( struct sockaddr_storage *ss,
       if ( check_addr_equal ( ss, &hosts_cache[i].ss ) )
         {
           if ( hosts_cache[i].status == RESOLVED )
-            return i; //cache hit
+            return i;  // cache hit
 
           // already in cache, but not resolved
           return -2;
@@ -63,48 +64,47 @@ check_name_resolved ( struct sockaddr_storage *ss,
 void *
 ip2domain_thread ( void *arg )
 {
-  char host_buff[NI_MAXHOST] = { 0 };
-
   struct hosts *host = ( struct hosts * ) arg;
-  int ret;
 
   // convert ipv4 and ipv6
-  ret = getnameinfo ( ( struct sockaddr * ) &host->ss,
-                      sizeof ( host->ss ),
-                      host_buff,
-                      NI_MAXHOST,
-                      NULL,
-                      0,
-                      NI_DGRAM );
-
-  if ( !ret )
-    strncpy ( host->fqdn, host_buff, sizeof ( host->fqdn ) );
+  if ( getnameinfo ( ( struct sockaddr * ) &host->ss,
+                     sizeof ( host->ss ),
+                     host->fqdn,
+                     sizeof ( host->fqdn ),
+                     NULL,
+                     0,
+                     NI_DGRAM ) )
+    {
+      sockaddr_ntop ( &host->ss, host->fqdn, sizeof ( host->fqdn ) );
+    }
 
   host->status = RESOLVED;
-  
-  pthread_detach(pthread_self()); // free resources to system
-  pthread_exit ( NULL );  	  // close thread
+
+  pthread_exit ( NULL );
 }
 
+// return:
+//  1 name resolved
+//  0 name no resolved
+//  -1 on error
 int
 ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
 {
-  static struct hosts hosts_cache[MAX_CACHE_ENTRIES] = { 0 };
+  static struct hosts hosts_cache[MAX_CACHE_ENTRIES];
   static unsigned int tot_hosts_cache = 0;
   static unsigned int index_cache_host = 0;
 
-  // static struct thread_arg t_arg;
   pthread_t tid;
+  pthread_attr_t attr;
 
   int nr = check_name_resolved ( ss, hosts_cache, tot_hosts_cache );
   if ( nr >= 0 )
     {
       // cache hit
-
       strncpy ( buff, hosts_cache[nr].fqdn, buff_len );
       return 1;
     }
-  else if (nr == -2)
+  else if ( nr == -2 )
     {
       // already resolving
       sockaddr_ntop ( ss, buff, buff_len );
@@ -128,21 +128,25 @@ ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
               sockaddr_ntop ( ss, buff, buff_len );
               return 0;
             }
-
         }
 
       memcpy ( &hosts_cache[index_cache_host].ss, ss, sizeof ( *ss ) );
+
       hosts_cache[index_cache_host].status = RESOLVING;
 
       // transform binary to text
       sockaddr_ntop ( ss, buff, buff_len );
 
+      pthread_attr_init ( &attr );
+      pthread_attr_setstacksize ( &attr, PTHREAD_STACK_MIN );  // stack size 256KiB
+      pthread_attr_setdetachstate ( &attr, PTHREAD_CREATE_DETACHED );
+
       // passes buffer space for thread to work
       if ( pthread_create ( &tid,
-                            NULL,
+                            &attr,
                             ip2domain_thread,
                             ( void * ) &hosts_cache[index_cache_host] ) )
-        perror ( "pthread_create" );
+        return -1;
 
       UPDATE_TOT_HOSTS_IN_CACHE ( tot_hosts_cache );
       UPDATE_INDEX_CACHE ( index_cache_host );

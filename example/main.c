@@ -25,6 +25,12 @@
 
 #include "../domain.h"
 
+static void fatal(char *msg)
+{
+  fprintf(stderr, "%s\n", msg);
+  exit(1);
+}
+
 int main(int argc, char **argv)
 {
   // example
@@ -47,12 +53,18 @@ int main(int argc, char **argv)
   char buff_domain[NI_MAXHOST];
   char buff_service[NI_MAXSERV];
 
+  int r;
   // return ip immediately, no dns query latency
-  while(!ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST))
-    printf("ip returned 1ª call     - %s\n", buff_domain);
+  while(! (r = ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST)))
+    {
+      printf("ip returned 1ª call     - %s\n", buff_domain);
 
-  // life continue (working...)
-  // sleep(2);
+        // life continue (working...)
+      sleep(1);
+    }
+
+  if (r < 0)
+    fatal("Error call ip2domain");
 
   // the next query the domain will be available immediately (cache)
   // ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);
