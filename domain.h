@@ -19,8 +19,8 @@
 #ifndef RESOLVER_H
 #define RESOLVER_H
 
-#include <sys/socket.h> // struct sockaddr_storage
-#include <netdb.h>      // NI_MAXHOST
+#include <sys/socket.h>  // struct sockaddr_storage
+#include <netdb.h>       // NI_MAXHOST
 
 struct hosts
 {

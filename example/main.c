@@ -16,61 +16,112 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <stdio.h>
-#include <stdlib.h>     // atoi
 #include <arpa/inet.h>
-#include <netdb.h>      // NI_MAXHOST NI_MAXSERV
+#include <netdb.h>  // NI_MAXHOST NI_MAXSERV
+#include <stdio.h>
+#include <stdlib.h>  // atoi
 #include <unistd.h>
 
 #include "../domain.h"
+#include "../thread_pool.h"
 
-static void fatal(char *msg)
+struct demand
 {
-  fprintf(stderr, "%s\n", msg);
-  exit(1);
+  char buff_domain[NI_MAXHOST];
+  char *ip;
+  int type;
+};
+
+static void
+fatal ( char *msg )
+{
+  fprintf ( stderr, "%s\n", msg );
+  exit ( 1 );
 }
 
-int main(int argc, char **argv)
+void
+init_demand ( struct demand *demand, int size )
 {
-  // example
-  char *ip = "2001:4860:4860::8844";
-  short int port = 53;
+  for ( int i = 0; i < size; i++ )
+    {
+      if ( demand[i].type == AF_INET )
+        {
+          struct sockaddr_in host;
+          host.sin_family = AF_INET;
+          inet_pton ( AF_INET, demand[i].ip, &host.sin_addr );
+          ip2domain ( ( struct sockaddr_storage * ) &host,
+                      demand[i].buff_domain,
+                      NI_MAXHOST );
+        }
+      else if ( demand[i].type == AF_INET6 )
+        {
+          struct sockaddr_in6 host;
+          host.sin6_family = AF_INET6;
+          inet_pton ( AF_INET6, demand[i].ip, &host.sin6_addr );
+          ip2domain ( ( struct sockaddr_storage * ) &host,
+                      demand[i].buff_domain,
+                      NI_MAXHOST );
+        }
+      else
+        continue;
 
-  if (argc > 1)
-    ip = argv[1];
+      printf ( "%s - %s\n", demand[i].ip, demand[i].buff_domain );
+    }
+}
 
-  if (argc > 2)
-    port = atoi(argv[2]);
+int
+main ( void )
+{
+  if ( !init_workers ( 4 ) )
+    fatal ( "Error init_workers" );
+
+  static struct demand demand[] = { { { 0 }, "8.8.8.8", AF_INET },
+                                    { { 0 }, "2001:4860:4860::8844", AF_INET6 },
+                                    { { 0 }, "8.8.4.4", AF_INET },
+                                    { { 0 }, "208.67.222.222", AF_INET },
+                                    { { 0 }, "208.67.220.220", AF_INET },
+                                    { { 0 }, "1.1.1.1", AF_INET },
+                                    { { 0 }, "9.9.9.9", AF_INET },
+                                    { { 0 }, "201.10.128.3", AF_INET },
+                                    { { 0 }, "216.58.202.142", AF_INET } };
+
+  puts ( "First call, return immediately\n" );
+  init_demand ( demand, sizeof demand / sizeof demand[0] );
+
+  usleep ( 5000 );
+  puts ( "\nSecond call, return immediately whith name resolveds (if there was "
+         "time )\n" );
+  init_demand ( demand, sizeof demand / sizeof demand[0] );
 
   // input...
-  struct sockaddr_in6 host;
-  host.sin6_family = AF_INET6;
-  inet_pton(AF_INET6, ip, &host.sin6_addr);
+  // struct sockaddr_in6 host;
+  // host.sin6_family = AF_INET6;
+  // inet_pton(AF_INET6, "2001:4860:4860::8844", &host.sin6_addr);
+  //
+  // struct sockaddr_in host2;
+  // host2.sin_family = AF_INET;
+  // inet_pton(AF_INET, "201.67.222.222", &host2.sin_addr);
+
   /////////////////////////////////////////////////
 
-
-  char buff_domain[NI_MAXHOST];
-  char buff_service[NI_MAXSERV];
-
-  int r;
-  // return ip immediately, no dns query latency
-  while(! (r = ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST)))
-    {
-      printf("ip returned 1ª call     - %s\n", buff_domain);
-
-        // life continue (working...)
-      sleep(1);
-    }
-
-  if (r < 0)
-    fatal("Error call ip2domain");
-
-  // the next query the domain will be available immediately (cache)
+  // char buff_domain[NI_MAXHOST];
+  // char buff_domain2[NI_MAXHOST];
+  //
+  // // return ip immediately, no dns query latency
   // ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);
-  printf("domain returned 2ª call - %s\n", buff_domain);
-
+  // ip2domain((struct sockaddr_storage *) &host2, buff_domain2, NI_MAXHOST);
+  //
+  // printf("returned 1ª call - %s\n", buff_domain);
+  // printf("returned 1ª call - %s\n", buff_domain2);
+  //
+  // sleep(1);
+  //
+  // // the next query the domain will be available immediately (cache)
+  // ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);
+  // ip2domain((struct sockaddr_storage *) &host2, buff_domain2, NI_MAXHOST);
+  //
+  // printf("returned 2ª call - %s\n", buff_domain);
+  // printf("returned 2ª call - %s\n", buff_domain2);
 
   return 0;
-
 }

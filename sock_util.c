@@ -16,13 +16,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>  // inet_ntop
 #include <stdlib.h>
 #include <stdbool.h>
-
 
 bool
 check_addr_equal ( struct sockaddr_storage *addr1,

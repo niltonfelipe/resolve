@@ -9,14 +9,14 @@ C_SOURCE = $(wildcard $(DIR_LIB)/*.c)
 #get all file *.o
 OBJECTS = $(C_SOURCE:.c=.o) main.o
 
-
-
+CC = gcc
 LDLIBS = -lpthread
+CFLAGS = -Wall -Wextra -pedantic -g
 
 all: $(PROGRAM_NAME)
 
 $(PROGRAM_NAME): $(OBJECTS)
-	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 # compila objetos
 %.o: %.c %.h
