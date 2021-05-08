@@ -23,6 +23,8 @@
 #include <sys/socket.h>  // struct sockaddr_storage
 #include <netdb.h>       // NI_MAXHOST
 
+#include "thread_pool.h"  // facility include in clients, include only domain.h
+
 struct hosts
 {
   struct sockaddr_storage ss;

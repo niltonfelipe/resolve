@@ -16,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #ifndef SOCK_UTIL_H
 #define SOCK_UTIL_H
 

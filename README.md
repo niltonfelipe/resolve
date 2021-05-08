@@ -6,6 +6,11 @@ without generating delays in the main application
 
 ## Example usage
 ```javascript
+  #include "domain.h"
+
+  // 0 use the default number of workers
+  thpool_init(0);
+
   // input...
   struct sockaddr_in6 host;
   host.sin6_family = AF_INET6;
@@ -20,7 +25,7 @@ without generating delays in the main application
   printf("ip returned 1ª call     - %s\n", buff_domain);
 
   // life continue (working...)
-  sleep(2);
+  sleep(1);
 
   // the next query the domain will be available immediately (cache)
   ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);

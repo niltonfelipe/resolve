@@ -24,7 +24,6 @@
 
 #include "domain.h"
 #include "sock_util.h"
-#include "thread_pool.h"
 
 // (2048 * sizeof(struct host)) == 2.26 MiB cache of domain
 #define MAX_CACHE_ENTRIES 2048
@@ -132,7 +131,12 @@ ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
       // transform binary to text
       sockaddr_ntop ( ss, buff, buff_len );
 
-      add_task ( ip2domain_exec, ( void * ) &hosts_cache[index_cache_host] );
+      // add task to workers (thread pool)
+      if ( -1 == add_task ( ip2domain_exec,
+                            ( void * ) &hosts_cache[index_cache_host] ) )
+        {
+          return -1;
+        }
 
       UPDATE_TOT_HOSTS_IN_CACHE ( tot_hosts_cache );
       UPDATE_INDEX_CACHE ( index_cache_host );

@@ -24,7 +24,6 @@
 #include <unistd.h>
 
 #include "../domain.h"
-#include "../thread_pool.h" // to thpool_init
 
 struct demand
 {
