@@ -118,6 +118,7 @@ add_task ( void ( *func ) ( void * ), void *args )
 
   pthread_mutex_lock ( &mutex_queue );
 
+  // queues a job
   if ( -1 == enqueue ( task ) )
     {
       free_task(task);

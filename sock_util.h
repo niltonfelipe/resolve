@@ -1,5 +1,6 @@
+
 /*
- *  Copyright (C) 2020 Mayco S. Berghetti
+ *  Copyright (C) 2020-2021 Mayco S. Berghetti
  *
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+ 
 #ifndef SOCK_UTIL_H
 #define SOCK_UTIL_H
 
