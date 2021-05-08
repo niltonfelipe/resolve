@@ -65,6 +65,10 @@ enqueue ( void *data )
 void *
 dequeue ( void )
 {
+  // empty list
+  if (!queue_head)
+    return NULL;
+
   void *data = queue_head->data;
 
   void *t = queue_head;
