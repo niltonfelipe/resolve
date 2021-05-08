@@ -90,7 +90,7 @@ th_worker ( __attribute__ ( ( unused ) ) void *args )
 int
 thpool_init ( unsigned int num_workers )
 {
-  if ( ! num_workers && ! ( num_workers = n_cpu_system() ) )
+  if ( ! num_workers && ! ( num_workers = n_cpu_system() - 1 ) )
     num_workers = DEFAULT_NUM_WORKERS;
 
   pthread_t tid;
