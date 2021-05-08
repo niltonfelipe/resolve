@@ -22,6 +22,7 @@
 #include <limits.h>  // for PTHREAD_STACK_MIN
 
 #include "queue.h"
+#include "get_cpu.h"
 
 #define DEFAULT_NUM_WORKERS 3
 
@@ -89,7 +90,8 @@ th_worker ( __attribute__ ( ( unused ) ) void *args )
 int
 thpool_init ( unsigned int num_workers )
 {
-  num_workers = ( num_workers > 0 ) ? num_workers : DEFAULT_NUM_WORKERS;
+  if ( ! num_workers && ! ( num_workers = n_cpu_system() ) )
+    num_workers = DEFAULT_NUM_WORKERS;
 
   pthread_t tid;
   pthread_attr_t attr;

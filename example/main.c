@@ -72,7 +72,7 @@ start_demand ( struct demand *demand, int size )
 int
 main ( void )
 {
-  if ( !thpool_init ( 4 ) )
+  if ( !thpool_init ( 0 ) )
     fatal ( "Error init_workers" );
 
   // input...

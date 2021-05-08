@@ -66,6 +66,7 @@ ip2domain_exec ( void *arg )
   struct hosts *host = ( struct hosts * ) arg;
 
   // convert ipv4 and ipv6
+  // if error, convert to text ip same
   if ( getnameinfo ( ( struct sockaddr * ) &host->ss,
                      sizeof ( host->ss ),
                      host->fqdn,
