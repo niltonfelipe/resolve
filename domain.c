@@ -2,12 +2,11 @@
 /*
  *  Copyright (C) 2020-2021 Mayco S. Berghetti
  *
- *  This file is part of Netproc.
  *
- *  Netproc is free software: you can redistribute it and/or modify
+ *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
- *  any later version.
+ *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -93,9 +92,6 @@ ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
   static unsigned int tot_hosts_cache = 0;
   static unsigned int index_cache_host = 0;
 
-  // pthread_t tid;
-  // pthread_attr_t attr;
-
   int nr = check_name_resolved ( ss, hosts_cache, tot_hosts_cache );
   if ( nr >= 0 )
     {
@@ -136,19 +132,7 @@ ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
       // transform binary to text
       sockaddr_ntop ( ss, buff, buff_len );
 
-      add_task_queue ( ip2domain_exec,
-                       ( void * ) &hosts_cache[index_cache_host] );
-
-      // pthread_attr_init ( &attr );
-      // pthread_attr_setstacksize ( &attr, PTHREAD_STACK_MIN );  // stack size
-      // 256KiB pthread_attr_setdetachstate ( &attr, PTHREAD_CREATE_DETACHED );
-      //
-      // // passes buffer space for thread to work
-      // if ( pthread_create ( &tid,
-      //                       &attr,
-      //                       ip2domain_thread,
-      //                       ( void * ) &hosts_cache[index_cache_host] ) )
-      //   return -1;
+      add_task ( ip2domain_exec, ( void * ) &hosts_cache[index_cache_host] );
 
       UPDATE_TOT_HOSTS_IN_CACHE ( tot_hosts_cache );
       UPDATE_INDEX_CACHE ( index_cache_host );

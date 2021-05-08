@@ -23,7 +23,7 @@
 #include <unistd.h>
 
 #include "../domain.h"
-#include "../thread_pool.h"
+#include "../thread_pool.h" // to thpool_init
 
 struct demand
 {
@@ -40,7 +40,7 @@ fatal ( char *msg )
 }
 
 void
-init_demand ( struct demand *demand, int size )
+start_demand ( struct demand *demand, int size )
 {
   for ( int i = 0; i < size; i++ )
     {
@@ -72,56 +72,31 @@ init_demand ( struct demand *demand, int size )
 int
 main ( void )
 {
-  if ( !init_workers ( 4 ) )
+  if ( !thpool_init ( 4 ) )
     fatal ( "Error init_workers" );
 
-  static struct demand demand[] = { { { 0 }, "8.8.8.8", AF_INET },
-                                    { { 0 }, "2001:4860:4860::8844", AF_INET6 },
-                                    { { 0 }, "8.8.4.4", AF_INET },
-                                    { { 0 }, "208.67.222.222", AF_INET },
-                                    { { 0 }, "208.67.220.220", AF_INET },
-                                    { { 0 }, "1.1.1.1", AF_INET },
-                                    { { 0 }, "9.9.9.9", AF_INET },
-                                    { { 0 }, "201.10.128.3", AF_INET },
-                                    { { 0 }, "216.58.202.142", AF_INET } };
+  // input...
+  struct demand demand[] = { { { 0 }, "8.8.8.8", AF_INET },
+                             { { 0 }, "2001:4860:4860::8844", AF_INET6 },
+                             { { 0 }, "8.8.4.4", AF_INET },
+                             { { 0 }, "208.67.222.222", AF_INET },
+                             { { 0 }, "208.67.220.220", AF_INET },
+                             { { 0 }, "1.1.1.1", AF_INET },
+                             { { 0 }, "9.9.9.9", AF_INET },
+                             { { 0 }, "201.10.128.3", AF_INET },
+                             { { 0 }, "201.10.128.2", AF_INET },
+                             { { 0 }, "204.79.197.212", AF_INET },
+                             { { 0 }, "142.250.218.197", AF_INET },
+                             { { 0 }, "216.58.202.142", AF_INET } };
 
   puts ( "First call, return immediately\n" );
-  init_demand ( demand, sizeof demand / sizeof demand[0] );
+  start_demand ( demand, sizeof demand / sizeof demand[0] );
 
-  usleep ( 5000 );
+  usleep ( 50000 );
+
   puts ( "\nSecond call, return immediately whith name resolveds (if there was "
          "time )\n" );
-  init_demand ( demand, sizeof demand / sizeof demand[0] );
-
-  // input...
-  // struct sockaddr_in6 host;
-  // host.sin6_family = AF_INET6;
-  // inet_pton(AF_INET6, "2001:4860:4860::8844", &host.sin6_addr);
-  //
-  // struct sockaddr_in host2;
-  // host2.sin_family = AF_INET;
-  // inet_pton(AF_INET, "201.67.222.222", &host2.sin_addr);
-
-  /////////////////////////////////////////////////
-
-  // char buff_domain[NI_MAXHOST];
-  // char buff_domain2[NI_MAXHOST];
-  //
-  // // return ip immediately, no dns query latency
-  // ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);
-  // ip2domain((struct sockaddr_storage *) &host2, buff_domain2, NI_MAXHOST);
-  //
-  // printf("returned 1ª call - %s\n", buff_domain);
-  // printf("returned 1ª call - %s\n", buff_domain2);
-  //
-  // sleep(1);
-  //
-  // // the next query the domain will be available immediately (cache)
-  // ip2domain((struct sockaddr_storage *) &host, buff_domain, NI_MAXHOST);
-  // ip2domain((struct sockaddr_storage *) &host2, buff_domain2, NI_MAXHOST);
-  //
-  // printf("returned 2ª call - %s\n", buff_domain);
-  // printf("returned 2ª call - %s\n", buff_domain2);
+  start_demand ( demand, sizeof demand / sizeof demand[0] );
 
   return 0;
 }

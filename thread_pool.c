@@ -1,30 +1,68 @@
 
+/*
+ *  Copyright (C) 2020-2021 Mayco S. Berghetti
+ *
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <stdlib.h>  // for malloc
 #include <pthread.h>
 #include <limits.h>  // for PTHREAD_STACK_MIN
 
+#include "queue.h"
+
 #define DEFAULT_NUM_WORKERS 3
-#define LEN_QUEUE_TASK 256
 
 struct task
 {
-  void ( *func_task ) ( void * );
-  void *args;
+  void ( *func ) ( void * );  // function pointer
+  void *args;                 // arg to function
 };
 
-static struct task task_queue[LEN_QUEUE_TASK];
 static unsigned int task_count = 0;
 
 static pthread_mutex_t mutex_queue = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond_queue = PTHREAD_COND_INITIALIZER;
 
+static struct task *
+create_task ( void ( *func ) ( void * ), void *args )
+{
+  struct task *task = malloc ( sizeof ( *task ) );
+  if ( !task )
+    return NULL;
+
+  task->func = func;
+  task->args = args;
+
+  return task;
+}
+
+static void
+free_task ( struct task *t )
+{
+  free ( t );
+}
+
 static void
 execute_task ( struct task *task )
 {
-  task->func_task ( task->args );
+  task->func ( task->args );
 }
 
 static void *
-start_workers ( __attribute__ ( ( unused ) ) void *args )
+th_worker ( __attribute__ ( ( unused ) ) void *args )
 {
   struct task *task;
   while ( 1 )
@@ -35,23 +73,21 @@ start_workers ( __attribute__ ( ( unused ) ) void *args )
       while ( !task_count )
         pthread_cond_wait ( &cond_queue, &mutex_queue );
 
-      // task = &task_queue[current_task];
-      task = &task_queue[0];
-      for ( unsigned int i = 0; i < task_count - 1; i++ )
-        task_queue[i] = task_queue[i + 1];
-
+      // get first job from queue(removes it from queue)
+      task = dequeue ();
       task_count--;
 
       pthread_mutex_unlock ( &mutex_queue );
 
       execute_task ( task );
+      free_task ( task );
     }
 
   pthread_exit ( NULL );
 }
 
 int
-init_workers ( unsigned int num_workers )
+thpool_init ( unsigned int num_workers )
 {
   num_workers = ( num_workers > 0 ) ? num_workers : DEFAULT_NUM_WORKERS;
 
@@ -64,7 +100,7 @@ init_workers ( unsigned int num_workers )
 
   while ( num_workers-- )
     {
-      if ( pthread_create ( &tid, &attr, start_workers, NULL ) )
+      if ( pthread_create ( &tid, &attr, th_worker, NULL ) )
         return 0;
     }
 
@@ -73,17 +109,27 @@ init_workers ( unsigned int num_workers )
   return 1;
 }
 
-void
-add_task_queue ( void ( *func ) ( void * ), void *args )
+int
+add_task ( void ( *func ) ( void * ), void *args )
 {
-  // struct task task = { .func_task = func, .args = args };
+  struct task *task = create_task ( func, args );
+  if ( !task )
+    return -1;
 
   pthread_mutex_lock ( &mutex_queue );
-  task_queue[task_count] = ( struct task ){
-          .func_task = func, .args = args };  // test compund literal here after
+
+  if ( -1 == enqueue ( task ) )
+    {
+      free_task(task);
+      pthread_mutex_unlock ( &mutex_queue );
+      return -1;
+    }
+
   task_count++;
   pthread_mutex_unlock ( &mutex_queue );
 
   // wake up a thread to work
   pthread_cond_signal ( &cond_queue );
+
+  return 0;
 }

@@ -11,7 +11,11 @@ OBJECTS = $(C_SOURCE:.c=.o) main.o
 
 CC = gcc
 LDLIBS = -lpthread
-CFLAGS = -Wall -Wextra -pedantic -g
+CFLAGS = -Wall -Wextra -pedantic
+
+ifdef DEBUG
+	CFLAGS+= -g -O0
+endif
 
 all: $(PROGRAM_NAME)
 

@@ -1,2 +1,3 @@
-break main
+break enqueue_task
+break dequeue_task
 
