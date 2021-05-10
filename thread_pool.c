@@ -41,12 +41,12 @@ static struct task *
 create_task ( void ( *func ) ( void * ), void *args )
 {
   struct task *task = malloc ( sizeof ( *task ) );
-  if ( !task )
-    return NULL;
-
-  task->func = func;
-  task->args = args;
-
+  if ( task )
+    {
+      task->func = func;
+      task->args = args;
+    }
+    
   return task;
 }
 

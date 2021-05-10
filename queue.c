@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (C) 2020-2021 Mayco S. Berghetti
+ *  Copyright (C) 2021 Mayco S. Berghetti
  *
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -32,11 +32,12 @@ static struct queue *
 create_element ( void *data )
 {
   struct queue *e = malloc ( sizeof ( *e ) );
-  if ( !e )
-    return NULL;
 
-  e->data = data;
-  e->next = NULL;
+  if ( e )
+    {
+      e->data = data;
+      e->next = NULL;
+    }
 
   return e;
 }
