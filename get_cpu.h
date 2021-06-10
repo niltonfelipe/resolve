@@ -21,6 +21,6 @@
 #define GET_CPU_H
 
 int
-n_cpu_system(void);
+n_cpu_system ( void );
 
-#endif // GET_CPU_H
+#endif  // GET_CPU_H

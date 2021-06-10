@@ -17,53 +17,39 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <errno.h>
-#include <string.h>
-#include <pthread.h>
-#include <limits.h>  // for PTHREAD_STACK_MIN
+#include <stdio.h>
+#include <string.h>      // strncpy
+#include <sys/socket.h>  // getnameinfo
+#include <netdb.h>       // getnameinfo
 
 #include "domain.h"
+#include "thread_pool.h"
+#include "list.h"
 #include "sock_util.h"
 
-// (2048 * sizeof(struct host)) == 2.26 MiB cache of domain
-#define MAX_CACHE_ENTRIES 2048
+// (2048 * sizeof(struct host)) == ~2.31 MiB cache of domain
+#define DEFAULT_CACHE_ENTRIES 2048
 
-#define RESOLVED 1
-#define RESOLVING 2
+static unsigned int cache_size = DEFAULT_CACHE_ENTRIES;
 
-// circular index
-#define UPDATE_INDEX_CACHE( idx ) \
-  ( ( idx ) = ( ( idx ) + 1 ) % MAX_CACHE_ENTRIES )
-
-#define UPDATE_TOT_HOSTS_IN_CACHE( tot )                    \
-  ( ( tot ) = ( ( tot ) < MAX_CACHE_ENTRIES ) ? ( tot ) + 1 \
-                                              : MAX_CACHE_ENTRIES )
-
-static int
-check_name_resolved ( struct sockaddr_storage *ss,
-                      struct hosts *hosts_cache,
-                      const size_t tot_hosts_cache )
+void
+cache_domain_init ( unsigned int size )
 {
-  for ( size_t i = 0; i < tot_hosts_cache; i++ )
-    {
-      if ( check_addr_equal ( ss, &hosts_cache[i].ss ) )
-        {
-          if ( hosts_cache[i].status == RESOLVED )
-            return i;  // cache hit
-
-          // already in cache, but not resolved
-          return -2;
-        }
-    }
-
-  // not found in cache
-  return -1;
+  if ( size )
+    cache_size = size;
 }
 
 void
+cache_domain_free ( void )
+{
+  list_free ();
+}
+
+// run on thread
+void
 ip2domain_exec ( void *arg )
 {
-  struct hosts *host = ( struct hosts * ) arg;
+  struct host *host = ( struct host * ) arg;
 
   // convert ipv4 and ipv6
   // if error, convert to text ip same
@@ -84,63 +70,44 @@ ip2domain_exec ( void *arg )
 // return:
 //  1 name resolved
 //  0 name no resolved
-//  -1 on error
 int
 ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
 {
-  static struct hosts hosts_cache[MAX_CACHE_ENTRIES];
   static unsigned int tot_hosts_cache = 0;
-  static unsigned int index_cache_host = 0;
 
-  int nr = check_name_resolved ( ss, hosts_cache, tot_hosts_cache );
-  if ( nr >= 0 )
+  struct host *host = search_node ( ss );
+  if ( host )
     {
-      // cache hit
-      strncpy ( buff, hosts_cache[nr].fqdn, buff_len );
-      return 1;
-    }
-  else if ( nr == -2 )
-    {
-      // already resolving
-      sockaddr_ntop ( ss, buff, buff_len );
-      return 0;
-    }
-  else
-    {
-      // cache miss
-
-      // if status equal RESOLVING, a thread already working this slot,
-      // go to next
-      unsigned int count = 0;
-      while ( hosts_cache[index_cache_host].status == RESOLVING )
+      if ( host->status == RESOLVED )  // cache hit
         {
-          UPDATE_INDEX_CACHE ( index_cache_host );
+          strncpy ( buff, host->fqdn, buff_len );
 
-          // no buffer space currently available, return ip in format of text.
-          // increase the buffer size if you want ;)
-          if ( count++ == MAX_CACHE_ENTRIES - 1 )
-            {
-              sockaddr_ntop ( ss, buff, buff_len );
-              return 0;
-            }
+          // improved position of host on cache list
+          host->hit++;
+          reposition_node ( host );
+
+          return 1;
         }
-
-      memcpy ( &hosts_cache[index_cache_host].ss, ss, sizeof ( *ss ) );
-
-      hosts_cache[index_cache_host].status = RESOLVING;
-
+      else  // resolving, thread working
+        {
+          sockaddr_ntop ( ss, buff, buff_len );
+          return 0;
+        }
+    }
+  else  // cache miss
+    {
       // transform binary to text
       sockaddr_ntop ( ss, buff, buff_len );
 
       // add task to workers (thread pool)
-      if ( -1 == add_task ( ip2domain_exec,
-                            ( void * ) &hosts_cache[index_cache_host] ) )
-        {
-          return -1;
-        }
+      host = create_node ( ss );
+      add_task ( ip2domain_exec, host );
+      insert_node_tail ( host );
 
-      UPDATE_TOT_HOSTS_IN_CACHE ( tot_hosts_cache );
-      UPDATE_INDEX_CACHE ( index_cache_host );
+      if ( tot_hosts_cache == cache_size )
+        remove_last_node ();
+      else
+        tot_hosts_cache++;
     }
 
   return 0;

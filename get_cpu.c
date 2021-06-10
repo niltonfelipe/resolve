@@ -20,14 +20,15 @@
 #include <unistd.h>
 
 // return tot cpu available on system or 0
-int n_cpu_system(void)
+int
+n_cpu_system ( void )
 {
   int ret = 0;
 
 // GNU extension
 #ifdef _SC_NPROCESSORS_ONLN
-  ret = (int) sysconf(_SC_NPROCESSORS_ONLN);
-  if (ret < 0)
+  ret = ( int ) sysconf ( _SC_NPROCESSORS_ONLN );
+  if ( ret < 0 )
     ret = 0;
 #endif
 

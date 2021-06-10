@@ -17,20 +17,30 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RESOLVER_H
-#define RESOLVER_H
+#ifndef DOMAIN_H
+#define DOMAIN_H
 
 #include <sys/socket.h>  // struct sockaddr_storage
 #include <netdb.h>       // NI_MAXHOST
 
-#include "thread_pool.h"  // facility include in clients, include only domain.h
-
-struct hosts
+struct host
 {
   struct sockaddr_storage ss;
   char fqdn[NI_MAXHOST];
+  struct host *next, *prev;
   int status;
+  int hit;
 };
+
+// hosts status
+#define RESOLVED 1
+#define RESOLVING 2
+
+void
+cache_domain_init ( unsigned int size );
+
+void
+cache_domain_free ( void );
 
 // retorna imediatamente o ip em formato de texto, porém na proxima requisição
 // irá retornar o dominio que estará em cache (se tudo der certo).
@@ -38,4 +48,4 @@ struct hosts
 int
 ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len );
 
-#endif  // RESOLVER_H
+#endif  // DOMAIN_H

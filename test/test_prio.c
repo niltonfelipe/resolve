@@ -18,12 +18,15 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>  // atoi
-#include <netdb.h>   // NI_MAXHOST NI_MAXSERV
+#include <stdlib.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <time.h>  // clock()
 
 #include "../resolver.h"
+
+// https://bitismyth.wordpress.com/2019/09/24/contador-do-homem-pobre-agora-com-suporta-ao-arm/
+#include "cycle_counting.h"
 
 struct demand
 {
@@ -42,30 +45,43 @@ fatal ( char *msg )
 void
 start_demand ( struct demand *demand, int size )
 {
+  struct sockaddr_storage host;
+  void *p = &host;
+
   for ( int i = 0; i < size; i++ )
     {
+      // usleep(7000);
       if ( demand[i].type == AF_INET )
         {
-          struct sockaddr_in host;
-          host.sin_family = AF_INET;
-          inet_pton ( AF_INET, demand[i].ip, &host.sin_addr );
-          ip2domain ( ( struct sockaddr_storage * ) &host,
-                      demand[i].buff_domain,
-                      NI_MAXHOST );
+          ( ( struct sockaddr_in * ) p )->sin_family = AF_INET;
+          inet_pton ( AF_INET,
+                      demand[i].ip,
+                      &( ( struct sockaddr_in * ) p )->sin_addr );
         }
       else if ( demand[i].type == AF_INET6 )
         {
-          struct sockaddr_in6 host;
-          host.sin6_family = AF_INET6;
-          inet_pton ( AF_INET6, demand[i].ip, &host.sin6_addr );
-          ip2domain ( ( struct sockaddr_storage * ) &host,
-                      demand[i].buff_domain,
-                      NI_MAXHOST );
+          ( ( struct sockaddr_in6 * ) p )->sin6_family = AF_INET6;
+          inet_pton ( AF_INET6,
+                      demand[i].ip,
+                      &( ( struct sockaddr_in6 * ) p )->sin6_addr );
         }
       else
         continue;
 
-      printf ( "%s - %s\n", demand[i].ip, demand[i].buff_domain );
+      // benchmark
+      counter_T cnt;
+      cnt = BEGIN_TSC ();
+
+      ip2domain ( ( struct sockaddr_storage * ) &host,
+                  demand[i].buff_domain,
+                  NI_MAXHOST );
+
+      cnt = END_TSC ( cnt );
+
+      printf ( "cycles %lu - %s - %s\n",
+               cnt,
+               demand[i].ip,
+               demand[i].buff_domain );
     }
 }
 
@@ -77,28 +93,32 @@ main ( void )
 
   // input...
   static struct demand demand[] = { { { 0 }, "8.8.8.8", AF_INET },
-                                    { { 0 }, "9.9.9.9", AF_INET },
-                                    { { 0 }, "201.10.128.3", AF_INET },
-                                    { { 0 }, "201.10.128.2", AF_INET },
-                                    { { 0 }, "204.79.197.212", AF_INET },
                                     { { 0 }, "2001:4860:4860::8844", AF_INET6 },
                                     { { 0 }, "8.8.4.4", AF_INET },
                                     { { 0 }, "208.67.222.222", AF_INET },
                                     { { 0 }, "208.67.220.220", AF_INET },
                                     { { 0 }, "1.1.1.1", AF_INET },
+                                    { { 0 }, "9.9.9.9", AF_INET },
+                                    { { 0 }, "201.10.128.3", AF_INET },
+                                    { { 0 }, "201.10.128.2", AF_INET },
+                                    { { 0 }, "204.79.197.212", AF_INET },
                                     { { 0 }, "142.250.218.197", AF_INET },
                                     { { 0 }, "216.58.202.142", AF_INET } };
 
-  puts ( "First call, return immediately\n" );
+  puts ( "First call\n" );
   start_demand ( demand, sizeof demand / sizeof demand[0] );
 
-  sleep ( 1 );
+  usleep ( 50000 );
+
+  // simulate 5 requests to IP 1.1.1.1
+  puts ( "\nSimulate requests\n" );
+  int i = 5;
+  while ( i-- )
+    start_demand ( &demand[i], 1 );
 
   puts ( "\nSecond call, return immediately whith name resolveds (if there was "
          "time )\n" );
   start_demand ( demand, sizeof demand / sizeof demand[0] );
-
-  resolver_clean ();
 
   return 0;
 }

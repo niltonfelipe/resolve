@@ -15,6 +15,8 @@ CFLAGS = -Wall -Wextra -pedantic
 
 ifdef DEBUG
 	CFLAGS+= -g -O0
+else
+	CFLAGS+= -O2
 endif
 
 all: $(PROGRAM_NAME)

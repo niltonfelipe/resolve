@@ -25,8 +25,7 @@ struct queue
   struct queue *next;
 };
 
-static struct queue *queue_head = NULL;
-static struct queue *queue_tail = NULL;
+static struct queue *queue_head = NULL, *queue_tail = NULL;
 
 static struct queue *
 create_element ( void *data )
@@ -51,8 +50,7 @@ enqueue ( void *data )
 
   if ( !queue_head )
     {
-      queue_head = element;
-      queue_tail = element;
+      queue_head = queue_tail = element;
     }
   else
     {
@@ -66,15 +64,16 @@ enqueue ( void *data )
 void *
 dequeue ( void )
 {
-  // empty list
-  if (!queue_head)
+  // empty queue
+  if ( !queue_head )
     return NULL;
 
   void *data = queue_head->data;
 
-  void *t = queue_head;
-  queue_head = queue_head->next;
-  free ( t );
+  struct queue *tmp = queue_head->next;
+  free ( queue_head );
+
+  queue_head = tmp;
 
   return data;
 }
