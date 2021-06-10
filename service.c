@@ -17,10 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <netdb.h>
+#include <string.h>     // strncpy
+#include <netdb.h>      // getservbyport
+#include <arpa/inet.h>  // htons
 
 int
 port2serv ( unsigned short int port,

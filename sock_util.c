@@ -17,10 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <stddef.h>     // size_t
 #include <string.h>     // memcmp
 #include <arpa/inet.h>  // inet_ntop
-#include <stdbool.h>
 #include <sys/socket.h>  // struct sockaddr_storage
 
 bool

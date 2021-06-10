@@ -21,6 +21,6 @@
 #define GET_CPU_H
 
 int
-n_cpu_system ( void );
+get_count_cpu ( void );
 
 #endif  // GET_CPU_H

@@ -21,7 +21,7 @@
 
 // return tot cpu available on system or 0
 int
-n_cpu_system ( void )
+get_count_cpu ( void )
 {
   int ret = 0;
 

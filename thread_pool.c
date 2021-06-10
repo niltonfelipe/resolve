@@ -57,6 +57,8 @@ static volatile unsigned int workers_alive = 0;
 static pthread_mutex_t mutex_workers_alive = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mutex_queue = PTHREAD_MUTEX_INITIALIZER;
 
+// static Queue queue_task;
+
 static void
 bsem_post ( struct bsem *sem )
 {
@@ -179,7 +181,7 @@ add_task ( void ( *func ) ( void * ), void *args )
 int
 thpool_init ( unsigned int num_workers )
 {
-  if ( !num_workers && !( num_workers = n_cpu_system () - 1 ) )
+  if ( !num_workers && !( num_workers = get_count_cpu () - 1 ) )
     num_workers = DEFAULT_NUM_WORKERS;
 
   pthread_t tid;
