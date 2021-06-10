@@ -1,29 +1,25 @@
-
 #ifndef LIST_H
 #define LIST_H
 
-#include <sys/socket.h>  // struct sockaddr_storage
+struct list_node
+{
+  void *data;
 
-#include "domain.h"
+  struct list_node *next;
+  struct list_node *prev;
+};
 
-struct host *
-create_node ( struct sockaddr_storage *ss );
+struct list
+{
+  struct list_node *head;
+  struct list_node *tail;
+  unsigned int size;
+};
 
-struct host *
-search_node ( struct sockaddr_storage *ss );
-
-void
-insert_node_tail ( struct host *node );
-
-// improves the position of the node in the list,
-// raising its position according to criteria
-void
-reposition_node ( struct host *node );
-
-void
-remove_last_node ( void );
+struct list_node *
+list_push ( struct list *list, void *data );
 
 void
-list_free ( void );
+list_delete( struct list *list, struct list_node *node );
 
-#endif  // LIST_H
+#endif // LIST_H

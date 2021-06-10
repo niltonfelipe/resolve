@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>      // free
 #include <string.h>      // strncpy
 #include <sys/socket.h>  // getnameinfo
 #include <netdb.h>       // getnameinfo
@@ -25,28 +26,39 @@
 #include "domain.h"
 #include "thread_pool.h"
 #include "list.h"
-#include "sock_util.h"
+#include "sock_util.h"   // check_addr_equal
 
 // (2048 * sizeof(struct host)) == ~2.31 MiB cache of domain
 #define DEFAULT_CACHE_ENTRIES 2048
-
-static unsigned int cache_size = DEFAULT_CACHE_ENTRIES;
+static unsigned int max_cache_size = DEFAULT_CACHE_ENTRIES;
+static struct list list_hosts = { 0 };
 
 void
 cache_domain_init ( unsigned int size )
 {
   if ( size )
-    cache_size = size;
+    max_cache_size = size;
 }
 
 void
 cache_domain_free ( void )
 {
-  list_free ();
+  struct list_node *node, *temp;
+
+  node = list_hosts.head;
+  while ( node )
+    {
+      temp = node->next;
+
+      free ( node->data );
+      free ( node );
+
+      node = temp;
+    }
 }
 
 // run on thread
-void
+static void
 ip2domain_exec ( void *arg )
 {
   struct host *host = ( struct host * ) arg;
@@ -67,25 +79,49 @@ ip2domain_exec ( void *arg )
   host->status = RESOLVED;
 }
 
+static struct host *
+create_host( struct sockaddr_storage *ss )
+{
+  struct host *host = malloc ( sizeof *host );
+
+  if ( host )
+    {
+      memcpy ( &host->ss, ss, sizeof ( *ss ) );
+      host->status = RESOLVING;
+    }
+
+  return host;
+}
+
+static struct host *
+search_host ( struct sockaddr_storage *ss )
+{
+  struct list_node *node = list_hosts.head;
+
+  while ( node )
+    {
+      if ( check_addr_equal ( node->data, ss ) )
+        return node->data;
+
+      node = node->next;
+    }
+
+  return NULL;
+}
+
 // return:
 //  1 name resolved
 //  0 name no resolved
 int
 ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
 {
-  static unsigned int tot_hosts_cache = 0;
+  struct host *host = search_host ( ss );
 
-  struct host *host = search_node ( ss );
   if ( host )
     {
       if ( host->status == RESOLVED )  // cache hit
         {
           strncpy ( buff, host->fqdn, buff_len );
-
-          // improved position of host on cache list
-          host->hit++;
-          reposition_node ( host );
-
           return 1;
         }
       else  // resolving, thread working
@@ -100,14 +136,19 @@ ip2domain ( struct sockaddr_storage *ss, char *buff, const size_t buff_len )
       sockaddr_ntop ( ss, buff, buff_len );
 
       // add task to workers (thread pool)
-      host = create_node ( ss );
+      host = create_host ( ss );
       add_task ( ip2domain_exec, host );
-      insert_node_tail ( host );
+      list_push( &list_hosts, host );
 
-      if ( tot_hosts_cache == cache_size )
-        remove_last_node ();
-      else
-        tot_hosts_cache++;
+      if ( list_hosts.size > max_cache_size )
+        {
+          host = list_hosts.tail->data;
+          if ( host->status == RESOLVED )
+            {
+              free ( host );
+              list_delete ( &list_hosts, list_hosts.tail );
+            }
+        }
     }
 
   return 0;

@@ -27,9 +27,7 @@ struct host
 {
   struct sockaddr_storage ss;
   char fqdn[NI_MAXHOST];
-  struct host *next, *prev;
   int status;
-  int hit;
 };
 
 // hosts status

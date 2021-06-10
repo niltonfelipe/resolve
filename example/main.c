@@ -46,8 +46,8 @@ start_demand ( struct demand *demand, int size )
     {
       if ( demand[i].type == AF_INET )
         {
-          struct sockaddr_in host;
-          host.sin_family = AF_INET;
+          struct sockaddr_in host = { .sin_family = AF_INET };
+
           inet_pton ( AF_INET, demand[i].ip, &host.sin_addr );
           ip2domain ( ( struct sockaddr_storage * ) &host,
                       demand[i].buff_domain,
@@ -55,8 +55,8 @@ start_demand ( struct demand *demand, int size )
         }
       else if ( demand[i].type == AF_INET6 )
         {
-          struct sockaddr_in6 host;
-          host.sin6_family = AF_INET6;
+          struct sockaddr_in6 host = { .sin6_family = AF_INET6 };
+
           inet_pton ( AF_INET6, demand[i].ip, &host.sin6_addr );
           ip2domain ( ( struct sockaddr_storage * ) &host,
                       demand[i].buff_domain,
