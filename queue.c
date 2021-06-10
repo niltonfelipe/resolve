@@ -17,20 +17,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>  // for malloc
+#include <stdlib.h>  // malloc
+#include "queue.h"
 
-struct queue
-{
-  void *data;
-  struct queue *next;
-};
-
-static struct queue *queue_head = NULL, *queue_tail = NULL;
-
-static struct queue *
+static struct queue_node *
 create_element ( void *data )
 {
-  struct queue *e = malloc ( sizeof ( *e ) );
+  struct queue_node *e = malloc ( sizeof ( *e ) );
 
   if ( e )
     {
@@ -41,39 +34,47 @@ create_element ( void *data )
   return e;
 }
 
-int
-enqueue ( void *data )
+struct queue_node *
+enqueue ( struct queue *queue, void *data )
 {
-  struct queue *element = create_element ( data );
-  if ( !element )
-    return -1;
+  struct queue_node *element = create_element ( data );
 
-  if ( !queue_head )
+  if ( element )
     {
-      queue_head = queue_tail = element;
-    }
-  else
-    {
-      queue_tail->next = element;
-      queue_tail = element;
+      queue->size++;
+
+      if ( !queue->head )
+        {
+          queue->head = queue->tail = element;
+        }
+      else
+        {
+          queue->tail->next = element;
+          queue->tail = element;
+        }
     }
 
-  return 0;
+  return element;
 }
 
 void *
-dequeue ( void )
+dequeue ( struct queue *queue )
 {
+  void *data;
+  struct queue_node *tmp;
+
   // empty queue
-  if ( !queue_head )
+  if ( !queue->size )
     return NULL;
 
-  void *data = queue_head->data;
+  queue->size--;
 
-  struct queue *tmp = queue_head->next;
-  free ( queue_head );
+  data = queue->head->data;
 
-  queue_head = tmp;
+  tmp = queue->head->next;
+  free ( queue->head );
+
+  queue->head = tmp;
 
   return data;
 }

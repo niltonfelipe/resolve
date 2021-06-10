@@ -20,10 +20,23 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-int
-enqueue ( void *element );
+struct queue_node
+{
+  void *data;
+  struct queue_node *next;
+};
+
+struct queue
+{
+  struct queue_node *head;
+  struct queue_node *tail;
+  unsigned int size;
+};
+
+struct queue_node *
+enqueue ( struct queue *queue, void *data );
 
 void *
-dequeue ( void );
+dequeue ( struct queue *queue );
 
 #endif  // QUEUE_H
