@@ -1,7 +1,7 @@
 
 
 PROGRAM_NAME = resolver
-DIR_LIB = ..
+DIR_LIB = ../resolver/
 
 # get all files *.c
 C_SOURCE = $(wildcard $(DIR_LIB)/*.c)

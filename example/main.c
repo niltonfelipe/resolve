@@ -23,7 +23,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#include "../resolver.h"
+#include "../resolver/resolver.h"
 
 struct demand
 {
@@ -72,7 +72,7 @@ start_demand ( struct demand *demand, int size )
 int
 main ( void )
 {
-  if ( !resolver_init ( 0, 0 ) )
+  if ( !resolver_init ( 0 ) )
     fatal ( "Error init_workers" );
 
   // input...

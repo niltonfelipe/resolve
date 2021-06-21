@@ -25,7 +25,7 @@
 #include "service.h"
 
 int
-resolver_init ( unsigned int cache_size, unsigned int num_workers );
+resolver_init ( unsigned int num_workers );
 
 void
 resolver_clean ( void );
