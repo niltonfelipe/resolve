@@ -20,8 +20,25 @@
 #ifndef DOMAIN_H
 #define DOMAIN_H
 
-#include <stddef.h>
-#include <sys/socket.h>   // sockaddr_storage
+#include <sys/socket.h>  // struct sockaddr_storage
+#include <netdb.h>       // NI_MAXHOST
+
+struct host
+{
+  struct sockaddr_storage ss;
+  char fqdn[NI_MAXHOST];
+  int status;
+};
+
+// hosts status
+#define RESOLVED 1
+#define RESOLVING 2
+
+void
+cache_domain_init ( unsigned int size );
+
+void
+cache_domain_free ( void );
 
 // retorna imediatamente o ip em formato de texto, porém na proxima requisição
 // irá retornar o dominio que estará em cache (se tudo der certo).

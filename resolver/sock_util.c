@@ -18,9 +18,9 @@
  */
 
 #include <stdbool.h>
-#include <stddef.h>     // size_t
-#include <string.h>     // memcmp
-#include <arpa/inet.h>  // inet_ntop
+#include <stddef.h>      // size_t
+#include <string.h>      // memcmp
+#include <arpa/inet.h>   // inet_ntop
 #include <sys/socket.h>  // struct sockaddr_storage
 
 bool
