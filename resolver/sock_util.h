@@ -20,10 +20,9 @@
 #ifndef SOCK_UTIL_H
 #define SOCK_UTIL_H
 
-#include <stdbool.h>
 #include <sys/socket.h>
 
-bool
+int
 check_addr_equal ( struct sockaddr_storage *addr1,
                    struct sockaddr_storage *addr2 );
 

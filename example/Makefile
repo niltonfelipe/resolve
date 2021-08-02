@@ -14,7 +14,7 @@ LDLIBS = -lpthread
 CFLAGS = -Wall -Wextra -pedantic
 
 ifdef DEBUG
-	CFLAGS+= -g -O0
+	CFLAGS+= -ggdb -O0
 else
 	CFLAGS+= -O2 -DNDEBUG
 endif
@@ -30,4 +30,8 @@ $(PROGRAM_NAME): $(OBJECTS)
 .PHONY: clean
 
 clean:
-	@ find $(DIR_LIB) -type f -name '*.o' -delete
+	@ find ../ -type f -name '*.o' -delete
+
+format:
+	@ clang-format -i ./*.[ch]
+	@ clang-format -i ../*/*.[ch]

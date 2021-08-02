@@ -72,12 +72,13 @@ start_demand ( struct demand *demand, int size )
 int
 main ( void )
 {
-  if ( !resolver_init ( 0 ) )
+  if ( !resolver_init ( 0, 0 ) )
     fatal ( "Error init_workers" );
 
   // input...
   static struct demand demand[] = { { { 0 }, "8.8.8.8", AF_INET },
                                     { { 0 }, "9.9.9.9", AF_INET },
+                                    { { 0 }, "216.58.202.142", AF_INET },
                                     { { 0 }, "201.10.128.3", AF_INET },
                                     { { 0 }, "201.10.128.2", AF_INET },
                                     { { 0 }, "204.79.197.212", AF_INET },
@@ -98,7 +99,7 @@ main ( void )
          "time )\n" );
   start_demand ( demand, sizeof demand / sizeof demand[0] );
 
-  resolver_clean ();
+  resolver_free ();
 
   return 0;
 }

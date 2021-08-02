@@ -17,18 +17,17 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stddef.h>      // size_t
 #include <string.h>      // memcmp
 #include <arpa/inet.h>   // inet_ntop
 #include <sys/socket.h>  // struct sockaddr_storage
 
-bool
+int
 check_addr_equal ( struct sockaddr_storage *addr1,
                    struct sockaddr_storage *addr2 )
 {
   if ( addr1->ss_family != addr2->ss_family )
-    return false;
+    return 0;
 
   switch ( addr1->ss_family )
     {
@@ -37,26 +36,22 @@ check_addr_equal ( struct sockaddr_storage *addr1,
           struct sockaddr_in *sa1 = ( struct sockaddr_in * ) addr1;
           struct sockaddr_in *sa2 = ( struct sockaddr_in * ) addr2;
 
-          if ( sa1->sin_addr.s_addr != sa2->sin_addr.s_addr )
-            return false;
+          return ( sa1->sin_addr.s_addr == sa2->sin_addr.s_addr );
 
-          return true;
+          break;
         }
       case AF_INET6:
         {
           struct sockaddr_in6 *sa1 = ( struct sockaddr_in6 * ) addr1;
           struct sockaddr_in6 *sa2 = ( struct sockaddr_in6 * ) addr2;
 
-          if ( memcmp ( &sa1->sin6_addr,
+           return ( memcmp ( &sa1->sin6_addr,
                         &sa2->sin6_addr,
-                        sizeof ( sa1->sin6_addr ) ) != 0 )
-            return false;
-
-          return true;
+                        sizeof ( sa1->sin6_addr ) ) == 0 );
         }
     }
 
-  return false;
+  return 0;
 }
 
 int
