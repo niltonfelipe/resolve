@@ -57,14 +57,13 @@ static hash_t
 cb_ht_hash ( const void *key )
 {
   struct sockaddr_storage *addr = ( struct sockaddr_storage * ) key;
-  hash_t hash = 0;
 
   switch ( addr->ss_family )
     {
       case AF_INET:
         {
           struct sockaddr_in *sa = ( struct sockaddr_in * ) addr;
-          hash = hash_uint32 ( sa->sin_addr.s_addr );
+          return hash_uint32 ( sa->sin_addr.s_addr );
 
           break;
         }
@@ -73,12 +72,15 @@ cb_ht_hash ( const void *key )
           struct sockaddr_in6 *sa = ( struct sockaddr_in6 * ) addr;
 
           int i = 4;
+          hash_t hash = 0;
           while ( i-- )
-            hash ^= hash_uint32( sa->sin6_addr.s6_addr32[i] );
+            hash ^= hash_uint32 ( sa->sin6_addr.s6_addr32[i] );
+
+          return hash;
         }
     }
 
-  return hash;
+  return 0;
 }
 
 int

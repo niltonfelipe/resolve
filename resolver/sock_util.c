@@ -54,12 +54,12 @@ check_addr_equal ( struct sockaddr_storage *addr1,
   return 0;
 }
 
-int
+char *
 sockaddr_ntop ( struct sockaddr_storage *addr,
                 char *buf,
                 const size_t len_buff )
 {
-  const char *ret = NULL;
+  const char *ret;
 
   switch ( addr->ss_family )
     {
@@ -74,10 +74,10 @@ sockaddr_ntop ( struct sockaddr_storage *addr,
                           &( ( struct sockaddr_in6 * ) addr )->sin6_addr,
                           buf,
                           len_buff );
+        break;
+      default:
+        ret = NULL;
     }
 
-  if ( !ret )
-    return 0;
-
-  return 1;
+  return ( char * ) ret;
 }
