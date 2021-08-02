@@ -17,7 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>      // free
+#include <stdint.h>
+#include <stdlib.h>      // malloc, free
 #include <string.h>      // strncpy
 #include <sys/socket.h>  // getnameinfo
 #include <netdb.h>       // getnameinfo
@@ -46,18 +47,24 @@ cb_ht_compare ( const void *key1, const void *key2 )
   return check_addr_equal ( ( void * ) key1, ( void * ) key2 );
 }
 
+static inline uint32_t
+hash_uint32 ( uint32_t v )
+{
+  return ( v >> 24 ) ^ ( v >> 16 ) ^ ( v >> 8 ) ^ ( v >> 4 ) ^ v;
+}
+
 static hash_t
 cb_ht_hash ( const void *key )
 {
   struct sockaddr_storage *addr = ( struct sockaddr_storage * ) key;
-  hash_t hash;
+  hash_t hash = 0;
 
   switch ( addr->ss_family )
     {
       case AF_INET:
         {
           struct sockaddr_in *sa = ( struct sockaddr_in * ) addr;
-          hash = sa->sin_addr.s_addr;
+          hash = hash_uint32 ( sa->sin_addr.s_addr );
 
           break;
         }
@@ -65,10 +72,9 @@ cb_ht_hash ( const void *key )
         {
           struct sockaddr_in6 *sa = ( struct sockaddr_in6 * ) addr;
 
-          int i = 16;
-          hash = 0;
+          int i = 4;
           while ( i-- )
-            hash += sa->sin6_addr.s6_addr[i];
+            hash ^= hash_uint32( sa->sin6_addr.s6_addr32[i] );
         }
     }
 
@@ -90,13 +96,6 @@ cache_domain_init ( unsigned int size )
     return 0;
 
   return 1;
-}
-
-void
-cache_domain_free ( void )
-{
-  hashtable_destroy ( ht_hosts );
-  free ( hosts );
 }
 
 // run on thread
@@ -121,25 +120,14 @@ ip2domain_exec ( void *arg )
   host->status = RESOLVED;
 }
 
-static struct host *
-create_host ( struct sockaddr_storage *ss )
-{
-  struct host *host = malloc ( sizeof *host );
-
-  if ( host )
-    {
-      memcpy ( &host->ss, ss, sizeof ( host->ss ) );
-      host->status = RESOLVING;
-    }
-
-  return host;
-}
-
 // return:
 //  1 name resolved
 //  0 name no resolved
+// -1 error
 int
-ip2domain ( struct sockaddr_storage *restrict ss, char *buff, const size_t buff_len )
+ip2domain ( struct sockaddr_storage *restrict ss,
+            char *buff,
+            const size_t buff_len )
 {
   struct host *host = hashtable_get ( ht_hosts, ss );
 
@@ -168,10 +156,17 @@ ip2domain ( struct sockaddr_storage *restrict ss, char *buff, const size_t buff_
             return 0;
 
           hashtable_remove ( ht_hosts, &hosts[index]->ss );
-          free ( hosts[index] );
+        }
+      else
+        {
+          hosts[index] = malloc ( sizeof ( struct host ) );
+
+          if ( !hosts[index] )
+            return -1;
         }
 
-      hosts[index] = create_host ( ss );
+      memcpy ( &hosts[index]->ss, ss, sizeof ( struct sockaddr_storage ) );
+      hosts[index]->status = RESOLVING;
 
       // add task to workers (thread pool)
       add_task ( ip2domain_exec, hosts[index] );
@@ -182,4 +177,11 @@ ip2domain ( struct sockaddr_storage *restrict ss, char *buff, const size_t buff_
     }
 
   return 0;
+}
+
+void
+cache_domain_free ( void )
+{
+  hashtable_destroy ( ht_hosts );
+  free ( hosts );
 }

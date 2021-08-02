@@ -45,9 +45,9 @@ check_addr_equal ( struct sockaddr_storage *addr1,
           struct sockaddr_in6 *sa1 = ( struct sockaddr_in6 * ) addr1;
           struct sockaddr_in6 *sa2 = ( struct sockaddr_in6 * ) addr2;
 
-           return ( memcmp ( &sa1->sin6_addr,
-                        &sa2->sin6_addr,
-                        sizeof ( sa1->sin6_addr ) ) == 0 );
+          return ( memcmp ( &sa1->sin6_addr,
+                            &sa2->sin6_addr,
+                            sizeof ( sa1->sin6_addr ) ) == 0 );
         }
     }
 

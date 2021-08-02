@@ -30,7 +30,7 @@ struct host
   int status;
 };
 
-// hosts status
+// host.status
 #define RESOLVED 1
 #define RESOLVING 2
 
