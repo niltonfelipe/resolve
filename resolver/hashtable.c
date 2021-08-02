@@ -249,18 +249,14 @@ hashtable_destroy ( hashtable_t *ht )
       if ( !ht->nentries )
         break;
 
-      printf ( "|" );
-
       hashtable_entry_t *entry = TABLE_HEAD ( ht, i );
       while ( entry )
         {
-          printf ( " %lu |", entry->key_hash );
           hashtable_entry_t *entry_next = ENTRY_NEXT ( entry );
           hashtable_destroy_entry ( ht, entry );
           ht->nentries--;
           entry = entry_next;
         }
-      putchar ( '\n' );
     }
 
   free ( ht->buckets );
