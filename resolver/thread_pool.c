@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <limits.h>  // for PTHREAD_STACK_MIN
 #include <unistd.h>  // sleep
+#include <stdatomic.h>
 #include <pthread.h>
 
 #include "queue.h"
@@ -49,10 +50,9 @@ static struct bsem bsem_exit = { .mutex = PTHREAD_MUTEX_INITIALIZER,
                                  .cond = PTHREAD_COND_INITIALIZER,
                                  .value = false };
 
-static volatile bool worker_stop = false;
+static volatile atomic_bool worker_stop = false;
+static volatile atomic_uint workers_alive = 0;
 
-static volatile unsigned int workers_alive = 0;
-static pthread_mutex_t mutex_workers_alive = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mutex_queue = PTHREAD_MUTEX_INITIALIZER;
 
 static struct queue *queue_task;
@@ -115,9 +115,7 @@ execute_task ( struct task *task )
 static void *
 th_worker ( __attribute__ ( ( unused ) ) void *args )
 {
-  pthread_mutex_lock ( &mutex_workers_alive );
   workers_alive++;
-  pthread_mutex_unlock ( &mutex_workers_alive );
 
   while ( !worker_stop )
     {
@@ -140,9 +138,7 @@ th_worker ( __attribute__ ( ( unused ) ) void *args )
         }
     }
 
-  pthread_mutex_lock ( &mutex_workers_alive );
   workers_alive--;
-  pthread_mutex_unlock ( &mutex_workers_alive );
 
   // make up main thread to exit
   bsem_post ( &bsem_exit );
