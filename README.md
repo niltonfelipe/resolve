@@ -1,4 +1,4 @@
-#Resolvedor de Domínio Assíncrono
+Resolvedor de Domínio Assíncrono
 Retorna imediatamente o ip solicitado em forma de texto, porém na próxima requisição desse ip o domínio estará disponível imediatamente (caso exista um domínio para o ip), sem gerar atrasos na aplicação principal.
 
 ## Exemplo de uso
