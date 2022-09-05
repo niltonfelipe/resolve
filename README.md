@@ -1,10 +1,7 @@
-#domain resolver async
-resolver asynchronous dns,
-immediately returns the requested ip in text form,
-however in the next request for that ip the domain will be available immediately (if there is a domain for the ip),
-without generating delays in the main application
+#Resolvedor de Domínio Assíncrono
+Retorna imediatamente o ip solicitado em forma de texto, porém na próxima requisição desse ip o domínio estará disponível imediatamente (caso exista um domínio para o ip), sem gerar atrasos na aplicação principal.
 
-## Example usage
+## Exemplo de uso
 ```javascript
 #include "domain.h"
 
@@ -33,4 +30,4 @@ printf ( "domain returned 2ª call - %s\n", buff_domain );
 
 ```
 
- **See folder [example](https://github.com/berghetti/resolver/tree/master/example)**
+ **See folder [example](https://github.com/niltonfelipe/resolve/tree/master/example)**
